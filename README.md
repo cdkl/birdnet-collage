@@ -27,29 +27,55 @@ Time windows: 1H · 12H · 24H · 7D · ALL. Dark mode supported.
 ## Quick start
 
 ```bash
-# clone
 git clone https://github.com/yourusername/birdnet-collage.git
 cd birdnet-collage
-
-# configure
-cp .env.example .env
-# edit .env: set BIRDNET_GO_URL to your Birdnet-GO instance
-#   BIRDNET_GO_URL=https://birdnet-go.example.com
-
-# install
 pip install -r requirements.txt
 
-# run
-BIRDNET_GO_URL=https://birdnet-go.example.com python3 -m flask --app src.app:create_app run --port 8081
+BIRDNET_GO_URL=http://your-birdnet-go:8080 python3 -m flask --app src.app:create_app run --port 8081
 # → http://localhost:8081
+```
 
-# or with Docker
-docker compose up
+### With Docker Compose
+
+```bash
+cp .env.example .env
+# edit .env: set BIRDNET_GO_URL
+
+docker compose up -d
 # → http://localhost:8081
+```
 
-# run tests
+### Run tests
+
+```bash
 python3 -m pytest
 ```
+
+## Deployment (Proxmox LXC)
+
+Create a Debian or Ubuntu LXC in Proxmox, SSH in, then:
+
+```bash
+# Install Docker
+apt update && apt install -y docker.io docker-compose-v2
+
+# Clone and configure
+git clone https://github.com/yourusername/birdnet-collage.git /opt/birdnet-collage
+cd /opt/birdnet-collage
+cp .env.example .env
+# edit .env: set BIRDNET_GO_URL to your Birdnet-GO LXC's address
+
+# Install as a systemd service (auto-start on boot)
+cp deploy/birdnet-collage.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now birdnet-collage
+
+# Check status
+systemctl status birdnet-collage
+curl http://localhost:8081/api/health
+```
+
+The service will be available at `http://<lxc-ip>:8081`.
 
 ## Configuration
 

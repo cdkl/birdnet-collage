@@ -5,8 +5,6 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - BIRDNET_GO_URL=http://birdnet-go:8080
-      - HOST=0.0.0.0
-      - PORT=8081
+      - BIRDNET_GO_URL=${BIRDNET_GO_URL}
       - DEBUG=false
     restart: unless-stopped
