@@ -1,0 +1,12 @@
+services:
+  birdnet-collage:
+    build: .
+    container_name: birdnet-collage
+    ports:
+      - "8081:8081"
+    environment:
+      - BIRDNET_GO_URL=http://birdnet-go:8080
+      - HOST=0.0.0.0
+      - PORT=8081
+      - DEBUG=false
+    restart: unless-stopped

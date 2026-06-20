@@ -1,0 +1,129 @@
+# birdnet-collage
+
+A standalone bird collage service that connects to [Birdnet-GO](https://github.com/tphakala/birdnet-go)'s REST API and displays recent detections as an illustrated collage. Runs as a containerized companion to Birdnet-GO.
+
+<img src="https://raw.githubusercontent.com/Twarner491/AvianVisitors/avian-visitors/docs/thumb.png" width="480" alt="avian-visitors collage">
+
+> The collage layout, frontend rendering, and 498 kachō-e bird illustrations are adapted from [**AvianVisitors**](https://github.com/Twarner491/AvianVisitors) by [@Twarner491](https://github.com/Twarner491). The original project overlays BirdNET-Pi with this UI as an integrated extension; this project extracts solely the collage + stats + atlas views and repurposes them as a standalone service backed by Birdnet-GO's REST API.
+
+## How it works
+
+```
+Browser ──► birdnet-collage (Flask) ──/api/v2/detections──► Birdnet-GO
+               │
+               ├─ /api/recent?hours=N   Collage + stats data
+               ├─ /api/lifelist         Atlas view data
+               └─ /api/img/{species}    498 kachō-e illustrations
+```
+
+The Python backend proxies Birdnet-GO's detection API and transforms responses into the format the AvianVisitors frontend expects. The frontend — a single-page JS app — renders:
+
+- **Collage** — Birds packed by silhouette detection count, sized proportionally
+- **Stats** — Timeline chart, top species, first detections
+- **Atlas** — Field-guide grid, sortable by count/recency/alphabet
+
+Time windows: 1H · 12H · 24H · 7D · ALL. Dark mode supported.
+
+## Quick start
+
+```bash
+# clone
+git clone https://github.com/yourusername/birdnet-collage.git
+cd birdnet-collage
+
+# configure
+cp .env.example .env
+# edit .env: set BIRDNET_GO_URL to your Birdnet-GO instance
+#   BIRDNET_GO_URL=https://birdnet-go.example.com
+
+# install
+pip install -r requirements.txt
+
+# run
+BIRDNET_GO_URL=https://birdnet-go.example.com python3 -m flask --app src.app:create_app run --port 8081
+# → http://localhost:8081
+
+# or with Docker
+docker compose up
+# → http://localhost:8081
+
+# run tests
+python3 -m pytest
+```
+
+## Configuration
+
+All settings via environment variables (or `.env` file):
+
+| Variable | Default | Description |
+|---|---|---|
+| `BIRDNET_GO_URL` | `http://birdnet-go.local:8080` | Birdnet-GO API base URL |
+| `BIRDNET_GO_TOKEN` | _(empty)_ | Bearer token if GO requires auth |
+| `HOST` | `0.0.0.0` | Listen address |
+| `PORT` | `8081` | Listen port |
+| `DEBUG` | `false` | Flask debug mode |
+
+## Requirements
+
+- **Birdnet-GO** instance with its REST API accessible (no special config needed — the `/api/v2/detections` endpoint is used)
+- Python 3.9+ or Docker
+
+## Architecture
+
+```
+birdnet-collage/
+├── src/
+│   ├── app.py              # Flask app, API proxy, image serving
+│   ├── birdnet_client.py   # Birdnet-GO REST API client
+│   └── config.py           # Environment-based configuration
+├── frontend/
+│   ├── index.html          # SPA shell (adapted from AvianVisitors)
+│   ├── apt.js              # Collage rendering engine (adapted)
+│   ├── styles.css          # Visual styling
+│   └── assets/
+│       └── illustrations/  # 498 kachō-e PNGs (249 species × 2 poses)
+├── Dockerfile
+├── docker-compose.yml
+└── requirements.txt
+```
+
+### What was adapted from AvianVisitors
+
+| Original (BirdNET-Pi) | Adapted (Birdnet-GO) |
+|---|---|
+| PHP API → SQLite `birds.db` | Python → Birdnet-GO `/api/v2/detections` |
+| `cutout.php` → illustrations | Flask `/api/img/{species}?pose=N` |
+| Password lock + admin panel | Removed |
+| Live audio streaming | Removed |
+| Menu/config/status API calls | Removed |
+| Collage, stats, atlas views | Preserved |
+
+### What was removed
+
+- Admin overlay (system status, logs, restart controls)
+- Password authentication (the info drawer is open)
+- Live audio streaming (Icecast)
+- Recording playback
+- Wikipedia + rembg dynamic image fallback
+- Cloudflare / Home Assistant / MQTT forwarding
+- BirdNET-Pi service management
+
+## Limitations
+
+- **Illustration coverage**: The 249 species in the bundled illustration set target Western North America (California). Birds detected by your instance outside that set will appear without an illustration in the collage (the JS handles this gracefully).
+- **Detection pagination**: Birdnet-GO caps API pages at 1,000 detections. For time windows longer than ~24h the service paginates automatically; each additional page adds ~1 second of latency.
+- **Wiki descriptions / recordings**: Not available. The detail modal shows species stats and external links (Wikipedia, eBird) but no embedded descriptions or audio playback.
+- **eBird region filtering**: Not implemented. All detections from your Birdnet-GO instance are shown regardless of your geographic region.
+
+## License
+
+CC-BY-NC-SA-4.0, inherited from [BirdNET-Pi](https://github.com/Nachtzuster/BirdNET-Pi/blob/main/LICENSE) and [AvianVisitors](https://github.com/Twarner491/AvianVisitors). Non-commercial use only.
+
+The bundled kachō-e illustrations were generated by the AvianVisitors project's [illustration pipeline](https://github.com/Twarner491/AvianVisitors/tree/avian-visitors/avian/scripts) using Gemini 2.5 Flash Image.
+
+## Credits
+
+- [**AvianVisitors**](https://github.com/Twarner491/AvianVisitors) by [@Twarner491](https://github.com/Twarner491) — the original collage UI, rendering engine, and illustration set that this project extracts and repurposes
+- [**Birdnet-GO**](https://github.com/tphakala/birdnet-go) by [@tphakala](https://github.com/tphakala) — the detection backend this service relies on
+- [**BirdNET**](https://birdnet.cornell.edu/) — the acoustic classifier from the Cornell Lab of Ornithology and Chemnitz University of Technology
+- [**Nachtzuster/BirdNET-Pi**](https://github.com/Nachtzuster/BirdNET-Pi) — the original BirdNET-Pi project AvianVisitors was forked from

@@ -1,0 +1,5 @@
+__pycache__
+.env
+_avian_source
+*.pyc
+.git

@@ -1,0 +1,9 @@
+# birdnet-collage
+# A standalone bird collage service that interfaces with Birdnet-GO's REST API.
+# Extracts and repurposes the "Heard Recently" collage from AvianVisitors.
+
+flask==3.1.*
+requests==2.32.*
+python-dotenv==1.1.*
+gunicorn==23.*
+pytest==8.*
