@@ -8,8 +8,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY frontend/ ./frontend/
 
-ENV PORT=8081
+EXPOSE 8081
 
-EXPOSE ${PORT}
-
-CMD gunicorn --bind "0.0.0.0:${PORT}" --workers 2 --timeout 30 src.app:create_app()
+CMD ["gunicorn", "--bind", "0.0.0.0:8081", "--workers", "2", "--timeout", "30", "src.app:create_app()"]

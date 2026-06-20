@@ -3,8 +3,7 @@ services:
     build: .
     container_name: birdnet-collage
     ports:
-      - "${PORT:-8081}:${PORT:-8081}"
+      - "${PORT:-8081}:8081"
     environment:
       - BIRDNET_GO_URL=${BIRDNET_GO_URL}
-      - PORT=${PORT:-8081}
     restart: unless-stopped
