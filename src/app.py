@@ -95,17 +95,21 @@ def create_app(config=None):
 
     @app.route("/api/debug")
     def api_debug():
-        """Raw fetch debug: shows exactly what Birdnet-GO returns for detections."""
+        """Raw fetch debug: shows exactly what Birdnet-GO returns."""
         try:
-            raw = client._fetch_detections_page(offset=0, limit=2)
-            first = raw[0] if raw else None
+            raw_json = client._get("/detections", {"limit": 2, "offset": 0})
+            items = raw_json.get("data", []) if isinstance(raw_json, dict) else []
             return jsonify({
-                "fetched_count": len(raw),
-                "first_item": first,
-                "birdnet_go_url": config.BIRDNET_GO_URL,
+                "status": "ok",
+                "birdnet_go_url": client.base_url,
+                "raw_keys": list(raw_json.keys()) if isinstance(raw_json, dict) else str(type(raw_json)),
+                "raw_total": raw_json.get("total", "N/A") if isinstance(raw_json, dict) else "N/A",
+                "data_count": len(items),
+                "first_item_keys": list(items[0].keys()) if items else None,
+                "first_item": items[0] if items else None,
             })
         except Exception as e:
-            return jsonify({"error": str(e), "birdnet_go_url": config.BIRDNET_GO_URL})
+            return jsonify({"error": str(e), "birdnet_go_url": client.base_url})
 
     # --- API: image serving ---
 
