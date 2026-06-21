@@ -93,6 +93,20 @@ def create_app(config=None):
             },
         })
 
+    @app.route("/api/debug")
+    def api_debug():
+        """Raw fetch debug: shows exactly what Birdnet-GO returns for detections."""
+        try:
+            raw = client._fetch_detections_page(offset=0, limit=2)
+            first = raw[0] if raw else None
+            return jsonify({
+                "fetched_count": len(raw),
+                "first_item": first,
+                "birdnet_go_url": config.BIRDNET_GO_URL,
+            })
+        except Exception as e:
+            return jsonify({"error": str(e), "birdnet_go_url": config.BIRDNET_GO_URL})
+
     # --- API: image serving ---
 
     @app.route("/api/img/<path:sci_name>")
