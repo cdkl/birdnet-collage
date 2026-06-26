@@ -6,4 +6,5 @@ services:
       - "${PORT:-8081}:8081"
     environment:
       - BIRDNET_GO_URL=${BIRDNET_GO_URL}
+      - SITE_TITLE=${SITE_TITLE:-birdnet collage}
     restart: unless-stopped

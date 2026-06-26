@@ -105,6 +105,13 @@ Backend API responses must match what `apt.js` expects:
 | `PORT` | 8081 | Host port for docker-compose mapping |
 | `SITE_TITLE` | `birdnet collage` | Title shown in browser tab, header, about modal |
 
+**Constraint**: Every env var consumed by the application must appear in:
+1. `src/config.py` — Python-side default and `os.getenv()` call.
+2. `docker-compose.yml` `environment:` block — forwards the value into the container. Use `${VAR:-default}` syntax so it works with or without a `.env` file.
+3. `.env.example` — documents the variable for users.
+
+Failure to add an env var to docker-compose results in the container silently using the Python-side default.
+
 ## Deployment (Proxmox LXC)
 
 Debian/Ubuntu LXC → install Docker → clone repo → set `.env` → `docker compose up -d`.
