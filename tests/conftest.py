@@ -8,8 +8,9 @@ def now():
 
 
 @pytest.fixture
-def sample_detections(now):
+def sample_detections():
     """Create sample detection records matching Birdnet-GO's API format."""
+    now = datetime.now(timezone.utc)
     return [
         {
             "id": 1,
@@ -75,8 +76,9 @@ def api_response(sample_detections):
 
 
 @pytest.fixture
-def multi_page_detections(now):
+def multi_page_detections():
     """Create 1500 detections spanning 3 pages to test pagination."""
+    now = datetime.now(timezone.utc)
     detections = []
     for i in range(1500):
         minutes_ago = i * 2  # each detection 2 minutes apart

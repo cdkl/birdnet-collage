@@ -146,8 +146,10 @@ class TestGetRecentSpecies:
         species = client.get_recent_species(hours=24)
         cedar = next(s for s in species if s["sci"] == "Bombycilla cedrorum")
         assert cedar["n"] == 2
-        # Most recent detection is at 17:55
-        assert "17:55" in cedar["last_seen"]
+        # Most recent detection is 5 minutes ago (the first in the list)
+        from datetime import datetime, timedelta, timezone
+        expected_time = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()[:16]
+        assert expected_time[:16] in cedar["last_seen"]
 
     def test_skips_missing_scientific_name(self):
         client = BirdnetGoClient("http://test:8080")
@@ -283,10 +285,12 @@ class TestEdgeCases:
         assert len(species) == 1
 
     def test_confidence_handles_string_values(self):
+        from datetime import datetime, timezone
+        recent_ts = datetime.now(timezone.utc).isoformat()
         client = BirdnetGoClient("http://test:8080")
         mock_resp = Mock()
         mock_resp.json.return_value = {"data": [{
-            "id": 1, "timestamp": "2026-06-20T18:00:00+00:00",
+            "id": 1, "timestamp": recent_ts,
             "scientificName": "Testus testus", "commonName": "Test",
             "confidence": "0.88",
         }], "total": 1}

@@ -1,0 +1,12 @@
+#!/bin/sh
+# Pre-commit: run smoke tests before allowing commit.
+# Symlink this into .git/hooks:  ln -sf ../../.githooks/pre-commit .git/hooks/
+# Or run:  git config core.hooksPath .githooks
+
+set -e
+
+echo "=== smoke tests ==="
+python3 -m pytest tests/test_smoke.py -q --tb=short
+
+echo "=== all tests ==="
+python3 -m pytest -q --tb=short

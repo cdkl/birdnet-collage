@@ -7,6 +7,9 @@
 ## Running the project
 
 ```bash
+# one-time setup
+git config core.hooksPath .githooks   # enable pre-commit smoke tests
+
 # local dev
 cd birdnet-collage
 pip install -r requirements.txt
