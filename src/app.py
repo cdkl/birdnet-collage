@@ -282,9 +282,9 @@ def create_app(config=None):
 
     # --- Frontend routes ---
 
-    @app.route("/")
-    def index():
-        return render_template("index.html")
+@app.route("/")
+def index():
+    return render_template("index.html", site_title=config.SITE_TITLE)
 
     @app.route("/<path:path>")
     def static_files(path):

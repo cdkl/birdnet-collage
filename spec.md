@@ -103,6 +103,7 @@ Backend API responses must match what `apt.js` expects:
 | `BIRDNET_GO_URL` | (required) | Birdnet-GO base URL (http or https) |
 | `BIRDNET_GO_TOKEN` | (none) | Bearer token if GO auth enabled |
 | `PORT` | 8081 | Host port for docker-compose mapping |
+| `SITE_TITLE` | `birdnet collage` | Title shown in browser tab, header, about modal |
 
 ## Deployment (Proxmox LXC)
 

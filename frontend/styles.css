@@ -1427,7 +1427,7 @@
   .rec-row.expanded .rec-spectro { height: 88px; }
   /* The spectrogram is rendered client-side onto a canvas - we fetch
      the mp3, decode via Web Audio, run an STFT, and paint columns
-     with our ink palette. No BirdNET-Pi PNG involved. */
+     with our ink palette. No Birdnet-GO PNG involved. */
   .rec-spectro canvas {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
@@ -1533,7 +1533,7 @@
   .modal-actions .chip.ext::after { content: '↗'; opacity: 0.6; }
 
   /* Spectrogram appears on first audio play. Recoloured via CSS filter
-     so BirdNET-Pi's default colour spectrogram comes out as a clean
+     so Birdnet-GO's default colour spectrogram comes out as a clean
      monochrome ink strip, matching the rest of the chart. Click to
      replay; a thin progress bar tracks playback in real time. */
   .bird-card .spectro-wrap {

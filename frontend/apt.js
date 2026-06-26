@@ -56,7 +56,7 @@
   // Each view's title text. The shared static-head shows one of these
   // based on the current view; identical adjacent values mean the title
   // stays put with no fade (collage and stats both say Heard Recently).
-  var VIEW_TITLES = ['Heard Recently', 'Heard Recently', 'Avian Visitors'];
+  var VIEW_TITLES = ['Heard Recently', 'Heard Recently', 'Species Atlas'];
   var staticHead = document.querySelector('.static-head');
   var staticTitle = document.getElementById('staticTitle');
   function setTitleForView(i) {
@@ -1021,7 +1021,7 @@
     var firstseen = DATA.firstseen || { species: [] };
 
     // By Period - pulled directly from /api/stats so the numbers
-    // are authoritative (BirdNET-Pi's own counts).
+    // are authoritative (Birdnet-GO's own counts).
     var last_hour = (stats.last_hour && stats.last_hour.detections) || 0;
     var today_det = (stats.today && stats.today.detections) || 0;
     var week_det = (stats.week && stats.week.detections) || 0;
@@ -1106,7 +1106,7 @@
     if (!lifelist.length) {
       grid.innerHTML = '<div class="atlas-empty">' +
         '<p>No birds detected yet.</p>' +
-        '<p class="hint">The atlas fills up as BirdNET-Pi identifies new species.</p>' +
+        '<p class="hint">The atlas fills up as Birdnet-GO identifies new species.</p>' +
         '</div>';
       return;
     }
@@ -1426,7 +1426,7 @@
   // Render the unlocked drawer:
   //   - inline LIVE AUDIO player (streams icecast through the worker tunnel)
   //   - collapsible SETTINGS section (closed by default to avoid mis-clicks)
-  //   - small ADVANCED TOOLS grid for the rest of BirdNET-Pi (still
+  //   - small ADVANCED TOOLS grid for the rest of Birdnet-GO (still
   //     opens externally; rebuilding all of these in our design is on
   //     the follow-up list)
   function renderMenu(menu) {
