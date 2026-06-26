@@ -1358,10 +1358,10 @@
       fetchJson('/api/firstseen?limit=10').catch(function () { return null; }),
       fetchJson('/api/recent?hours=' + forHours).catch(function () { return null; }),
     ]).then(function (parts) {
-      DATA.stats = parts[0];
-      DATA.lifelist = parts[1];
-      DATA.timeseries = parts[2];
-      DATA.firstseen = parts[3];
+      if (parts[0]) DATA.stats = parts[0];
+      if (parts[1]) DATA.lifelist = parts[1];
+      if (parts[2]) DATA.timeseries = parts[2];
+      if (parts[3]) DATA.firstseen = parts[3];
       // Only accept the recent slice if the window hasn't changed
       // since this poll started - otherwise keep what's there.
       if (forHours === currentHours && parts[4]) DATA.recent = parts[4];
@@ -1390,12 +1390,16 @@
   // resumes (with an immediate fetch) when it becomes visible again.
   var POLL_MS = 30 * 1000;
   var pollTimer = null;
+  var pollBusy = false;
+  function doPoll() {
+    if (document.hidden) return;
+    if (pollBusy) return;
+    pollBusy = true;
+    refreshAll().then(function () { pollBusy = false; }).catch(function () { pollBusy = false; });
+  }
   function startPolling() {
     stopPolling();
-    pollTimer = setInterval(function () {
-      if (document.hidden) return;
-      refreshAll();
-    }, POLL_MS);
+    pollTimer = setInterval(doPoll, POLL_MS);
   }
   function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
   document.addEventListener('visibilitychange', function () {
