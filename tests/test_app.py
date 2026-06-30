@@ -94,8 +94,10 @@ class TestRecentEndpoint:
             app.config["TESTING"] = True
             with app.test_client() as client:
                 resp = client.get("/api/recent?hours=24")
-                assert resp.status_code == 200
-                assert resp.get_json()["species"] == []
+                assert resp.status_code == 503
+                data = resp.get_json()
+                assert data["species"] == []
+                assert "error" in data
 
 
 class TestStatsEndpoint:

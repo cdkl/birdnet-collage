@@ -159,7 +159,11 @@ def create_app(config=None):
             log.exception("Failed to get recent species for %dh window", hours)
             _record_error("recent", hours, str(e))
             _record_fetch(0, 0, False)
-            species = []
+            return jsonify({
+                "hours": hours,
+                "species": [],
+                "error": str(e),
+            }), 503
         return jsonify({
             "hours": hours,
             "species": species,
