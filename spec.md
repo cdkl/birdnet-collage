@@ -19,15 +19,16 @@ A standalone decoupled service that displays a live bird detection collage. Extr
 
 ```
 Browser ──► birdnet-collage (Flask + gunicorn) ──► Birdnet-GO REST API
-               │    port 8081 (container)              /api/v2/detections
-               ├─ /api/recent?hours=N
-               ├─ /api/stats
-               ├─ /api/lifelist
-               ├─ /api/species?sci=X
-               ├─ /api/img/{species}?pose=N   ← 498 bundled PNGs
-               ├─ /api/health
-               ├─ /api/diagnostics
-               └─ /api/debug
+E-ink  ──►       │    port 8081 (container)              /api/v2/detections
+                  ├─ /api/recent?hours=N
+                  ├─ /api/stats
+                  ├─ /api/lifelist
+                  ├─ /api/species?sci=X
+                  ├─ /api/img/{species}?pose=N   ← 498 bundled PNGs
+                  ├─ /api/eink?w=N&h=N&hours=N   ← Rendered collage PNG (e-ink)
+                  ├─ /api/health
+                  ├─ /api/diagnostics
+                  └─ /api/debug
 ```
 
 **Stack**: Python 3.12 → Flask → gunicorn (2 workers) inside Docker. Frontend is static HTML/CSS/JS adapted from AvianVisitors.
@@ -45,6 +46,9 @@ Browser ──► birdnet-collage (Flask + gunicorn) ──► Birdnet-GO REST A
 | Docker exec form in CMD | Shell form caused syntax errors with `create_app()` |
 | Container port 8081 always; host port mapped via `${PORT}` | Decouples internal bind from external exposure |
 | 2 vCPU / 512 MB RAM recommendation | Thin proxy; 290MB of illustrations loaded at startup |
+| Python-side collage renderer (Pillow) | Server-rendered PNG for e-ink clients; Python port of JS mask-packing algorithm with reference-validation tests |
+| ETag-based 304 caching | E-ink clients detect no-change via If-None-Match, avoiding unnecessary render + transfer |
+| Two independent algorithm implementations | JS (web view) and Python (e-ink render) share the same MASKS/DIMS data; validated against shared reference fixtures |
 
 ## API adaptation (AvianVisitors → Birdnet-GO)
 
@@ -55,6 +59,7 @@ Browser ──► birdnet-collage (Flask + gunicorn) ──► Birdnet-GO REST A
 | `birdnet-api.php?action=lifelist` | `/api/lifelist` (all-time fetch, unlimited hours) |
 | `birdnet-api.php?action=species&sci=X` | `/api/species?sci=X` (searches all-time list) |
 | `cutout.php?sci=X&pose=N` | `/api/img/{species}?pose=N` (static PNGs, slugified) |
+| _new_ | `/api/eink?w=N&h=N&hours=N` (server-rendered collage PNG with title, ETag caching) |
 | `recording.php?file=X` | _removed_ |
 | `wiki.php?sci=X` | _removed_ |
 | `menu.php`, `config.php`, `birdnet-status.php` | _removed_ |
@@ -79,6 +84,7 @@ Backend API responses must match what `apt.js` expects:
 **`/api/lifelist`** → `{species: [{sci, com, n}]}`
 **`/api/species?sci=X`** → `{sci, summary: {com, total, first_seen, last_seen, best_conf} | null}`
 **`/api/img/{species}?pose=1|2`** → PNG image; slugified from scientific name.
+**`/api/eink?w=1600&h=1200&hours=24`** → `image/png` body with `ETag` header. Server-rendered collage + site title. Supports `If-None-Match` → 304. Parameters: `w` (200–4000), `h` (200–4000), `hours` (1–1000000).
 
 ## Illustrations
 
@@ -95,6 +101,9 @@ Backend API responses must match what `apt.js` expects:
 - **No audio playback**: recordings, spectrograms removed
 - **No species filtering**: all GO detections shown regardless of region
 - **No admin interface**: diagnostics via `/api/diagnostics` only
+- **E-ink render first-request latency**: The first `/api/eink` request after data changes takes 5–10s (fetch + mask pack + composite). Subsequent requests return 304 or serve cached PNG in <1s.
+- **Web view unaffected**: The frontend's `apt.js` drives the web collage independently. The Python renderer is only used by `/api/eink`.
+- **Stale cache on Birdnet-GO outage**: If Birdnet-GO is unreachable, `/api/eink` serves the last cached image (up to 24h old) rather than erroring.
 
 ## Configuration
 
@@ -121,7 +130,7 @@ Resources: 1 vCPU, 512 MB RAM, 8 GB disk.
 
 ## Tests
 
-57 pytest tests covering: Birdnet-GO client (pagination, filtering, aggregation, error handling), Flask endpoints (all API routes, image serving, clamps, error paths), slugify, diagnostics. Run via `python3 -m pytest`.
+118 pytest tests covering: Birdnet-GO client (pagination, filtering, aggregation, error handling), Flask endpoints (all API routes, image serving, clamps, error paths), slugify, diagnostics, collage renderer (PRNG, mask decoder, tuning, tile sizing, spiral packer with reference validation against JS), e-ink endpoint (PNG response, ETag/304, resolution clamping). Run via `python3 -m pytest`.
 
 ## Attribution
 

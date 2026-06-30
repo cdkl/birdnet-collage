@@ -1,0 +1,232 @@
+[
+  {
+    "slug": "calypte-anna",
+    "x": 643.198,
+    "y": 448.065,
+    "fullW": 327.383,
+    "fullH": 333.942,
+    "pose": 1,
+    "sci": "Calypte anna",
+    "n": 398
+  },
+  {
+    "slug": "passer-domesticus",
+    "x": 533.139,
+    "y": 506.152,
+    "fullW": 269.962,
+    "fullH": 220.309,
+    "pose": 1,
+    "sci": "Passer domesticus",
+    "n": 156
+  },
+  {
+    "slug": "haemorhous-mexicanus",
+    "x": 401.442,
+    "y": 528.855,
+    "fullW": 242.452,
+    "fullH": 230.762,
+    "pose": 1,
+    "sci": "Haemorhous mexicanus",
+    "n": 142
+  },
+  {
+    "slug": "turdus-migratorius",
+    "x": 951.585,
+    "y": 444.911,
+    "fullW": 206.089,
+    "fullH": 213.327,
+    "pose": 1,
+    "sci": "Turdus migratorius",
+    "n": 98
+  },
+  {
+    "slug": "zenaida-macroura",
+    "x": 681.994,
+    "y": 694.31,
+    "fullW": 204.476,
+    "fullH": 198.999,
+    "pose": 1,
+    "sci": "Zenaida macroura",
+    "n": 87
+  },
+  {
+    "slug": "spinus-psaltria",
+    "x": 977.074,
+    "y": 665.739,
+    "fullW": 226.168,
+    "fullH": 164.779,
+    "pose": 1,
+    "sci": "Spinus psaltria",
+    "n": 76
+  },
+  {
+    "slug": "zonotrichia-leucophrys",
+    "x": 1107.253,
+    "y": 500.987,
+    "fullW": 166.477,
+    "fullH": 202.228,
+    "pose": 1,
+    "sci": "Zonotrichia leucophrys",
+    "n": 65
+  },
+  {
+    "slug": "aphelocoma-californica",
+    "x": 816.675,
+    "y": 367.29,
+    "fullW": 160.771,
+    "fullH": 185.632,
+    "pose": 1,
+    "sci": "Aphelocoma californica",
+    "n": 54
+  },
+  {
+    "slug": "mimus-polyglottos",
+    "x": 1144.622,
+    "y": 623.114,
+    "fullW": 198.442,
+    "fullH": 129.696,
+    "pose": 1,
+    "sci": "Mimus polyglottos",
+    "n": 43
+  },
+  {
+    "slug": "sayornis-nigricans",
+    "x": 435.879,
+    "y": 408.504,
+    "fullW": 183.264,
+    "fullH": 129.594,
+    "pose": 1,
+    "sci": "Sayornis nigricans",
+    "n": 38
+  },
+  {
+    "slug": "corvus-brachyrhynchos",
+    "x": 518.137,
+    "y": 739.126,
+    "fullW": 153.577,
+    "fullH": 135.476,
+    "pose": 1,
+    "sci": "Corvus brachyrhynchos",
+    "n": 31
+  },
+  {
+    "slug": "bombycilla-cedrorum",
+    "x": 285.762,
+    "y": 583.145,
+    "fullW": 141.784,
+    "fullH": 140.519,
+    "pose": 1,
+    "sci": "Bombycilla cedrorum",
+    "n": 29
+  },
+  {
+    "slug": "pipilo-maculatus",
+    "x": 917.46,
+    "y": 330.171,
+    "fullW": 138.906,
+    "fullH": 136.921,
+    "pose": 1,
+    "sci": "Pipilo maculatus",
+    "n": 27
+  },
+  {
+    "slug": "melospiza-melodia",
+    "x": 873.582,
+    "y": 781.333,
+    "fullW": 140.609,
+    "fullH": 125.293,
+    "pose": 1,
+    "sci": "Melospiza melodia",
+    "n": 24
+  },
+  {
+    "slug": "junco-hyemalis",
+    "x": 390.949,
+    "y": 733.826,
+    "fullW": 155.213,
+    "fullH": 107.263,
+    "pose": 1,
+    "sci": "Junco hyemalis",
+    "n": 22
+  },
+  {
+    "slug": "setophaga-coronata",
+    "x": 604.03,
+    "y": 333.371,
+    "fullW": 131.73,
+    "fullH": 118.792,
+    "pose": 1,
+    "sci": "Setophaga coronata",
+    "n": 20
+  },
+  {
+    "slug": "sturnus-vulgaris",
+    "x": 284.968,
+    "y": 445.471,
+    "fullW": 122.088,
+    "fullH": 119.69,
+    "pose": 1,
+    "sci": "Sturnus vulgaris",
+    "n": 18
+  },
+  {
+    "slug": "columba-livia",
+    "x": 273.054,
+    "y": 701.205,
+    "fullW": 112.649,
+    "fullH": 120.159,
+    "pose": 1,
+    "sci": "Columba livia",
+    "n": 16
+  },
+  {
+    "slug": "ardea-herodias",
+    "x": 209.976,
+    "y": 518.141,
+    "fullW": 68.544,
+    "fullH": 181.059,
+    "pose": 1,
+    "sci": "Ardea herodias",
+    "n": 14
+  },
+  {
+    "slug": "buteo-jamaicensis",
+    "x": 723.298,
+    "y": 293.374,
+    "fullW": 79.595,
+    "fullH": 141.054,
+    "pose": 1,
+    "sci": "Buteo jamaicensis",
+    "n": 12
+  },
+  {
+    "slug": "sialia-mexicana",
+    "x": 1287.262,
+    "y": 520.277,
+    "fullW": 102.762,
+    "fullH": 102.762,
+    "pose": 1,
+    "sci": "Sialia mexicana",
+    "n": 6
+  },
+  {
+    "slug": "regulus-calendula",
+    "x": 474.208,
+    "y": 327.189,
+    "fullW": 113.383,
+    "fullH": 93.136,
+    "pose": 1,
+    "sci": "Regulus calendula",
+    "n": 4
+  },
+  {
+    "slug": "megaceryle-alcyon",
+    "x": 1141.988,
+    "y": 373.168,
+    "fullW": 90.465,
+    "fullH": 116.73,
+    "pose": 1,
+    "sci": "Megaceryle alcyon",
+    "n": 10
+  }
+]

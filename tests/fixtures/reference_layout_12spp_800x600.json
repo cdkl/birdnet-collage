@@ -1,0 +1,122 @@
+[
+  {
+    "slug": "calypte-anna",
+    "x": 277.03,
+    "y": 186.712,
+    "fullW": 202.791,
+    "fullH": 206.854,
+    "pose": 1,
+    "sci": "Calypte anna",
+    "n": 398
+  },
+  {
+    "slug": "passer-domesticus",
+    "x": 194.758,
+    "y": 218.556,
+    "fullW": 167.223,
+    "fullH": 136.466,
+    "pose": 1,
+    "sci": "Passer domesticus",
+    "n": 156
+  },
+  {
+    "slug": "haemorhous-mexicanus",
+    "x": 452.483,
+    "y": 210.687,
+    "fullW": 150.182,
+    "fullH": 142.941,
+    "pose": 1,
+    "sci": "Haemorhous mexicanus",
+    "n": 142
+  },
+  {
+    "slug": "turdus-migratorius",
+    "x": 63.108,
+    "y": 204.937,
+    "fullW": 127.658,
+    "fullH": 132.141,
+    "pose": 1,
+    "sci": "Turdus migratorius",
+    "n": 98
+  },
+  {
+    "slug": "zenaida-macroura",
+    "x": 175.725,
+    "y": 309.582,
+    "fullW": 126.658,
+    "fullH": 123.266,
+    "pose": 1,
+    "sci": "Zenaida macroura",
+    "n": 87
+  },
+  {
+    "slug": "spinus-psaltria",
+    "x": 303.618,
+    "y": 366.67,
+    "fullW": 140.095,
+    "fullH": 102.069,
+    "pose": 1,
+    "sci": "Spinus psaltria",
+    "n": 76
+  },
+  {
+    "slug": "zonotrichia-leucophrys",
+    "x": 467.503,
+    "y": 349.552,
+    "fullW": 103.121,
+    "fullH": 125.266,
+    "pose": 1,
+    "sci": "Zonotrichia leucophrys",
+    "n": 65
+  },
+  {
+    "slug": "aphelocoma-californica",
+    "x": 568.355,
+    "y": 223.443,
+    "fullW": 99.586,
+    "fullH": 114.986,
+    "pose": 1,
+    "sci": "Aphelocoma californica",
+    "n": 54
+  },
+  {
+    "slug": "mimus-polyglottos",
+    "x": 441.166,
+    "y": 131.339,
+    "fullW": 122.921,
+    "fullH": 80.337,
+    "pose": 1,
+    "sci": "Mimus polyglottos",
+    "n": 43
+  },
+  {
+    "slug": "sayornis-nigricans",
+    "x": 205.819,
+    "y": 125.182,
+    "fullW": 113.519,
+    "fullH": 80.274,
+    "pose": 1,
+    "sci": "Sayornis nigricans",
+    "n": 38
+  },
+  {
+    "slug": "corvus-brachyrhynchos",
+    "x": 101.874,
+    "y": 346.551,
+    "fullW": 95.13,
+    "fullH": 83.918,
+    "pose": 1,
+    "sci": "Corvus brachyrhynchos",
+    "n": 31
+  },
+  {
+    "slug": "bombycilla-cedrorum",
+    "x": 649.067,
+    "y": 218.946,
+    "fullW": 87.825,
+    "fullH": 87.041,
+    "pose": 1,
+    "sci": "Bombycilla cedrorum",
+    "n": 29
+  }
+]

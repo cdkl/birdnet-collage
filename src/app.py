@@ -9,6 +9,7 @@ from flask import Flask, jsonify, render_template, send_from_directory, request,
 
 from .config import Config
 from .birdnet_client import BirdnetGoClient
+from .collage_renderer import render_collage, compute_etag
 
 log = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ _error_log = deque(maxlen=20)
 _request_times = deque(maxlen=100)
 _last_birdnet_fetch = None
 _last_birdnet_success = False
+_eink_cache = {}  # key -> {"etag": str, "png": bytes, "expires": float}
 
 
 def _count_illustrations():
@@ -90,6 +92,14 @@ def create_app(config=None):
             "config": {
                 "birdnet_go_url": config.BIRDNET_GO_URL,
                 "port": config.PORT,
+            },
+            "eink_cache": {
+                "entries": len(_eink_cache),
+                "keys": list(_eink_cache.keys()),
+                "ages_seconds": {
+                    k: round(time.monotonic() - v.get("_ts", 0), 1)
+                    for k, v in _eink_cache.items()
+                },
             },
         })
 
@@ -227,6 +237,85 @@ def create_app(config=None):
             } if match else None,
             "detections": [],
         })
+
+    # --- API: e-ink collage render ---
+
+    @app.route("/api/eink")
+    def api_eink():
+        w = request.args.get("w", 1600, type=int)
+        h = request.args.get("h", 1200, type=int)
+        hours = request.args.get("hours", 24, type=int)
+        w = max(200, min(4000, w))
+        h = max(200, min(4000, h))
+        hours = max(1, min(1000000, hours))
+
+        key = f"eink:{w}:{h}:{hours}"
+        cached = _eink_cache.get(key)
+
+        # If client sent If-None-Match and it matches cache, 304 fast path
+        client_etag = request.headers.get("If-None-Match", "").strip('"')
+        if cached and client_etag and client_etag == cached["etag"]:
+            return ("", 304)
+
+        now = time.monotonic()
+
+        # Fetch species data
+        try:
+            species = client.get_recent_species(hours=hours)
+            _record_fetch(len(species), time.monotonic() - now, True)
+        except Exception as e:
+            log.exception("Failed to fetch species for eink render")
+            _record_error("eink", f"{w}x{h} {hours}h", str(e))
+            _record_fetch(0, time.monotonic() - now, False)
+            # Serve stale cache if available
+            if cached:
+                log.info("Serving stale eink cache (%.0fs old)",
+                         time.monotonic() - (cached.get("_ts", 0)))
+                resp = (cached["png"], 200,
+                        {"Content-Type": "image/png", "ETag": cached["etag"]})
+                if client_etag and client_etag == cached["etag"]:
+                    resp = ("", 304)
+                return resp
+            abort(503)
+
+        # Compute ETag and check if cached data is still current
+        etag = compute_etag(species, hours)
+        if cached and cached["etag"] == etag:
+            cached["_ts"] = now  # refresh timestamp
+            _eink_cache[key] = cached
+            if client_etag and client_etag == etag:
+                return ("", 304)
+            return (cached["png"], 200,
+                    {"Content-Type": "image/png", "ETag": etag})
+
+        # Render new collage
+        t0 = time.monotonic()
+        try:
+            png = render_collage(species, w, h, config.SITE_TITLE)
+        except Exception as e:
+            log.exception("Failed to render eink collage")
+            _record_error("eink_render", f"{w}x{h} {hours}h {len(species)}spp", str(e))
+            if cached:
+                return (cached["png"], 200,
+                        {"Content-Type": "image/png", "ETag": cached["etag"]})
+            abort(503)
+
+        elapsed = time.monotonic() - t0
+        if elapsed > 10:
+            log.warning("Eink render slow: %d species at %dx%d in %.1fs",
+                        len(species), w, h, elapsed)
+        if elapsed > 45:
+            log.error("Eink render critical: %.1fs at %dx%d (gunicorn timeout=60s)",
+                      elapsed, w, h)
+
+        _eink_cache[key] = {
+            "etag": etag,
+            "png": png,
+            "expires": now + 86400,
+            "_ts": now,
+        }
+        _record_fetch(len(species), elapsed, True)
+        return (png, 200, {"Content-Type": "image/png", "ETag": etag})
 
     @app.route("/api/timeseries")
     def api_timeseries():

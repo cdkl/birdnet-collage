@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "calypte-anna",
+    "x": 99.144,
+    "y": 72.83,
+    "fullW": 148.381,
+    "fullH": 151.354,
+    "pose": 1,
+    "sci": "Calypte anna",
+    "n": 398
+  },
+  {
+    "slug": "passer-domesticus",
+    "x": 80.932,
+    "y": 153.51,
+    "fullW": 122.356,
+    "fullH": 99.852,
+    "pose": 1,
+    "sci": "Passer domesticus",
+    "n": 156
+  },
+  {
+    "slug": "haemorhous-mexicanus",
+    "x": 186.626,
+    "y": 13.89,
+    "fullW": 109.888,
+    "fullH": 104.59,
+    "pose": 1,
+    "sci": "Haemorhous mexicanus",
+    "n": 142
+  },
+  {
+    "slug": "turdus-migratorius",
+    "x": 225.662,
+    "y": 189.422,
+    "fullW": 93.407,
+    "fullH": 96.687,
+    "pose": 1,
+    "sci": "Turdus migratorius",
+    "n": 98
+  }
+]

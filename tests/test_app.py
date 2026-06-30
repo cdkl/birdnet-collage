@@ -326,3 +326,81 @@ class TestDiagnosticsEndpoint:
                 assert "config" in data
                 assert "recent_requests" in data
                 assert "recent_errors" in data
+                assert "eink_cache" in data
+
+
+class TestEinkEndpoint:
+    """Tests for the /api/eink collage render endpoint."""
+
+    def _app_and_client(self, species_lists=None, health_ok=True):
+        mock = make_mock_client(species_lists=species_lists, health_ok=health_ok)
+        config = Config()
+        config.BIRDNET_GO_URL = "http://mock:8080"
+        config.SITE_TITLE = "test collage"
+        with patch("src.app.BirdnetGoClient", return_value=mock):
+            app = create_app(config=config)
+            app.config["TESTING"] = True
+            return app.test_client()
+
+    def test_returns_png(self):
+        species = [
+            {"sci": "Calypte anna", "com": "Anna's Hummingbird", "n": 10,
+             "best_conf": 0.9, "last_seen": "2026-06-20T18:00:00+00:00"},
+        ]
+        client = self._app_and_client(species_lists={24: species})
+        resp = client.get("/api/eink")
+        assert resp.status_code == 200
+        assert resp.content_type == "image/png"
+        assert resp.data[:4] == b'\x89PNG'
+        assert "ETag" in resp.headers
+
+    def test_304_on_match(self):
+        species = [
+            {"sci": "Calypte anna", "com": "Anna's Hummingbird", "n": 10,
+             "best_conf": 0.9, "last_seen": "2026-06-20T18:00:00+00:00"},
+        ]
+        client = self._app_and_client(species_lists={24: species})
+        # First request gets the ETag
+        resp1 = client.get("/api/eink")
+        etag = resp1.headers["ETag"]
+        # Second request with If-None-Match should 304
+        resp2 = client.get("/api/eink", headers={"If-None-Match": etag})
+        assert resp2.status_code == 304
+        assert resp2.data == b''
+
+    def test_200_on_etag_mismatch(self):
+        species1 = [
+            {"sci": "Calypte anna", "com": "Anna's Hummingbird", "n": 10,
+             "best_conf": 0.9, "last_seen": "2026-06-20T18:00:00+00:00"},
+        ]
+        client = self._app_and_client(species_lists={24: species1})
+        resp1 = client.get("/api/eink", headers={"If-None-Match": '"wrong-etag"'})
+        assert resp1.status_code == 200
+
+    def test_clamps_resolution(self):
+        species = []
+        client = self._app_and_client(species_lists={24: species})
+        resp = client.get("/api/eink?w=50&h=99999")
+        assert resp.status_code == 200
+
+    def test_custom_params(self):
+        species = [
+            {"sci": "Calypte anna", "com": "Anna's Hummingbird", "n": 5,
+             "best_conf": 0.9, "last_seen": "2026-06-20T18:00:00+00:00"},
+        ]
+        client = self._app_and_client(species_lists={1: species})
+        resp = client.get("/api/eink?w=800&h=600&hours=1")
+        assert resp.status_code == 200
+        assert resp.data[:4] == b'\x89PNG'
+
+    def test_handles_client_error(self):
+        mock = make_mock_client(raises=Exception("API down"))
+        config = Config()
+        config.BIRDNET_GO_URL = "http://mock:8080"
+        with patch("src.app.BirdnetGoClient", return_value=mock):
+            app = create_app(config=config)
+            app.config["TESTING"] = True
+            with app.test_client() as client:
+                # Use custom params so no stale cache from other tests
+                resp = client.get("/api/eink?w=333&h=222&hours=1")
+                assert resp.status_code == 503
