@@ -405,7 +405,7 @@ def render_collage(
     # --- Compute tile sizes ---
     tiles = _compute_tile_sizes(species, width, height, dims, masks_data)
     if not tiles:
-        # Empty collage: return blank image with title
+        # Empty collage: return blank image with header
         img = Image.new("RGB", (width, height), (255, 255, 255))
         draw = ImageDraw.Draw(img)
         _draw_title(draw, title, width)
@@ -421,11 +421,6 @@ def render_collage(
     placed = _scale_to_fit(tiles, width, height, xBias, yBias, pad, prng)
 
     # --- Composite onto canvas ---
-    # Title area: 60px header at top for reasonable title text
-    title_h = 0
-    if title:
-        title_h = 60
-
     img = Image.new("RGB", (width, height), (255, 255, 255))
     draw = ImageDraw.Draw(img)
 
@@ -474,29 +469,103 @@ def render_collage(
     return buf
 
 
-def _draw_title(draw, title: str, width: int):
-    """Draw centered title at top of image."""
-    font_size = 32
+_FONT_CACHE: dict = {}
+
+
+def _load_font(style: str, size: int) -> ImageFont:
+    """Load a serif font with the given style (Bold, Italic, ''), caching.
+
+    Tries DejaVu Serif (Linux) then Georgia (macOS), falls back to default.
+    """
+    key = (style, size)
+    cached = _FONT_CACHE.get(key)
+    if cached:
+        return cached
+
+    suffix = f"-{style}" if style else ""
+    families = [
+        ("DejaVuSerif", f"/usr/share/fonts/truetype/dejavu/DejaVuSerif{suffix}.ttf"),
+        ("Georgia", f"/System/Library/Fonts/Georgia {style}.ttf" if style else "/System/Library/Fonts/Georgia.ttf"),
+    ]
     font = None
-    for path in [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/System/Library/Fonts/Helvetica.ttc",
-        "/System/Library/Fonts/Supplemental/Arial.ttf",
-    ]:
+    for name, path in families:
         try:
-            font = ImageFont.truetype(path, font_size)
+            font = ImageFont.truetype(path, size)
             break
         except (OSError, IOError):
             continue
+
     if font is None:
         font = ImageFont.load_default()
 
-    bbox = draw.textbbox((0, 0), title, font=font)
-    tw = bbox[2] - bbox[0]
-    th = bbox[3] - bbox[1]
-    x = (width - tw) / 2
-    y = (60 - th) / 2
-    draw.text((x, y), title, fill=(30, 30, 30), font=font)
+    _FONT_CACHE[key] = font
+    return font
+
+
+def _draw_text_spaced(draw, xy, text, font, fill, letter_spacing):
+    """Draw text with per-character letter-spacing (px)."""
+    x, y = xy
+    for ch in text:
+        bbox = draw.textbbox((0, 0), ch, font=font)
+        cw = bbox[2] - bbox[0]
+        draw.text((x - bbox[0], y), ch, fill=fill, font=font)
+        x += cw + letter_spacing
+
+
+def _draw_title(draw, title: str, width: int):
+    """Draw two-line header: site name (small, italic, serif) above
+    'HEARD RECENTLY' (large, bold, serif, uppercase, letter-spaced).
+
+    Font sizes are width-relative, matching CSS clamp() expressions.
+    """
+    # Width-relative sizes matching CSS:
+    #   heading: clamp(24px, 3.2vw, 40px)
+    #   site:    clamp(13px, 1.4vw, 18px)
+    heading_size = min(max(24, int(round(width * 0.032))), 40)
+    site_size = min(max(13, int(round(width * 0.014))), 18)
+
+    heading_font = _load_font("Bold", heading_size)
+    site_font = _load_font("Italic", site_size)
+
+    heading_text = "HEARD RECENTLY"
+    heading_color = (30, 30, 30)
+    site_color = (100, 100, 100)
+
+    # Site name (no letter spacing)
+    site_bbox = draw.textbbox((0, 0), title, font=site_font)
+    site_w = site_bbox[2] - site_bbox[0]
+    site_h = site_bbox[3] - site_bbox[1]
+    site_x = (width - site_w) / 2
+
+    # Heading with letter-spacing (~0.06em)
+    ls = max(1, int(round(heading_size * 0.06)))
+    total_w = 0
+    char_data = []
+    for ch in heading_text:
+        b = draw.textbbox((0, 0), ch, font=heading_font)
+        cw = b[2] - b[0]
+        char_data.append((ch, b, cw))
+        total_w += cw + ls
+    total_w -= ls
+
+    heading_x = (width - total_w) / 2
+    heading_h = char_data[0][1][3] - char_data[0][1][1] if char_data else 0
+
+    # Vertical layout with padding
+    gap = max(4, int(round(heading_size * 0.25)))
+    pad_top = max(8, int(round(site_size * 0.8)))
+    pad_bot = pad_top
+
+    site_y = pad_top
+    heading_y = pad_top + site_h + gap
+
+    draw.text((site_x, site_y), title, fill=site_color, font=site_font)
+    _draw_text_spaced(
+        draw, (heading_x, heading_y), heading_text, heading_font,
+        heading_color, ls,
+    )
+
+    return pad_top + site_h + gap + heading_h + pad_bot
 
 
 def _img_to_bytes(img) -> bytes:
@@ -506,7 +575,7 @@ def _img_to_bytes(img) -> bytes:
     return buf.getvalue()
 
 
-def compute_etag(species: list[dict], hours: int, img_version: str = "r10") -> str:
+def compute_etag(species: list[dict], hours: int, img_version: str = "r11") -> str:
     """Compute a content-hash ETag from species data + params.
 
     Matches: sorted species (sci + n + last_seen) + hours + img_version
