@@ -406,3 +406,52 @@ class TestEinkEndpoint:
                 # Use custom params so no stale cache from other tests
                 resp = client.get("/api/eink?w=333&h=222&hours=1")
                 assert resp.status_code == 503
+
+    def test_refresh_bypasses_304(self):
+        species = [
+            {"sci": "Calypte anna", "com": "Anna's Hummingbird", "n": 10,
+             "best_conf": 0.9, "last_seen": "2026-06-20T18:00:00+00:00"},
+        ]
+        client = self._app_and_client(species_lists={24: species})
+        # Prime the cache
+        resp1 = client.get("/api/eink?w=640&h=480")
+        etag = resp1.headers["ETag"]
+        # With refresh=1, should return 200 even though ETag matches
+        resp2 = client.get("/api/eink?w=640&h=480&refresh=1",
+                           headers={"If-None-Match": etag})
+        assert resp2.status_code == 200
+        assert resp2.data[:4] == b'\x89PNG'
+
+    def test_refresh_bypasses_stale_cache_return(self):
+        """refresh=1 forces re-render even when cached ETag matches species data."""
+        species = [
+            {"sci": "Calypte anna", "com": "Anna's Hummingbird", "n": 10,
+             "best_conf": 0.9, "last_seen": "2026-06-20T18:00:00+00:00"},
+        ]
+        client = self._app_and_client(species_lists={24: species})
+        # Prime cache with first request
+        resp1 = client.get("/api/eink?w=640&h=480")
+        # Second request without refresh still returns cached — get the etag
+        resp2 = client.get("/api/eink?w=640&h=480")
+        etag = resp2.headers["ETag"]
+        # Third request with refresh=1 should return 200 even with matching If-None-Match
+        resp3 = client.get("/api/eink?w=640&h=480&refresh=1",
+                           headers={"If-None-Match": etag})
+        assert resp3.status_code == 200
+        assert resp3.data[:4] == b'\x89PNG'
+        # ETag in response should still be valid (data hasn't changed)
+        assert "ETag" in resp3.headers
+        assert resp3.headers["ETag"] == etag
+
+    def test_refresh_0_still_caches(self):
+        species = [
+            {"sci": "Calypte anna", "com": "Anna's Hummingbird", "n": 10,
+             "best_conf": 0.9, "last_seen": "2026-06-20T18:00:00+00:00"},
+        ]
+        client = self._app_and_client(species_lists={24: species})
+        resp1 = client.get("/api/eink?w=640&h=480&refresh=0")
+        etag = resp1.headers["ETag"]
+        # refresh=0 (explicit) should behave like no refresh — 304 on match
+        resp2 = client.get("/api/eink?w=640&h=480&refresh=0",
+                           headers={"If-None-Match": etag})
+        assert resp2.status_code == 304

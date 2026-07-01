@@ -249,6 +249,7 @@ def create_app(config=None):
         w = request.args.get("w", 1600, type=int)
         h = request.args.get("h", 1200, type=int)
         hours = request.args.get("hours", 24, type=int)
+        refresh = request.args.get("refresh", 0, type=int)
         w = max(200, min(4000, w))
         h = max(200, min(4000, h))
         hours = max(1, min(1000000, hours))
@@ -258,7 +259,7 @@ def create_app(config=None):
 
         # If client sent If-None-Match and it matches cache, 304 fast path
         client_etag = request.headers.get("If-None-Match", "").strip('"')
-        if cached and client_etag and client_etag == cached["etag"]:
+        if not refresh and cached and client_etag and client_etag == cached["etag"]:
             return ("", 304)
 
         now = time.monotonic()
@@ -284,7 +285,7 @@ def create_app(config=None):
 
         # Compute ETag and check if cached data is still current
         etag = compute_etag(species, hours)
-        if cached and cached["etag"] == etag:
+        if not refresh and cached and cached["etag"] == etag:
             cached["_ts"] = now  # refresh timestamp
             _eink_cache[key] = cached
             if client_etag and client_etag == etag:

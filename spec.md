@@ -84,7 +84,7 @@ Backend API responses must match what `apt.js` expects:
 **`/api/lifelist`** → `{species: [{sci, com, n}]}`
 **`/api/species?sci=X`** → `{sci, summary: {com, total, first_seen, last_seen, best_conf} | null}`
 **`/api/img/{species}?pose=1|2`** → PNG image; slugified from scientific name.
-**`/api/eink?w=1600&h=1200&hours=24`** → `image/png` body with `ETag` header. Server-rendered collage + site title. Supports `If-None-Match` → 304. Parameters: `w` (200–4000), `h` (200–4000), `hours` (1–1000000).
+**`/api/eink?w=1600&h=1200&hours=24&refresh=0`** → `image/png` body with `ETag` header. Server-rendered collage + site title. Supports `If-None-Match` → 304. Parameters: `w` (200–4000), `h` (200–4000), `hours` (1–1000000), `refresh` (0|1 — when 1, bypasses cache and always generates a fresh render).
 
 ## Illustrations
 
