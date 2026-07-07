@@ -424,8 +424,33 @@ def render_collage(
     img = Image.new("RGB", (width, height), (255, 255, 255))
     draw = ImageDraw.Draw(img)
 
+    title_height = 0
     if title:
-        _draw_title(draw, title, width)
+        title_height = _draw_title(draw, title, width)
+
+    # Vertically centre the title + collage block, with a gap matching the
+    # internal font gap between site name and heading.
+    if title_height > 0 and placed:
+        heading_size = min(max(24, int(round(width * 0.040))), 72)
+        font_gap = max(4, int(round(heading_size * 0.25)))
+        T = float("inf")
+        B = float("-inf")
+        for t in placed:
+            if t.get("x", 0) < -1000:
+                continue
+            if t["y"] < T:
+                T = t["y"]
+            if t["y"] + t["fullH"] > B:
+                B = t["y"] + t["fullH"]
+        total_h = title_height + font_gap + (B - T)
+        top_offset = (height - total_h) / 2
+        shift_y = top_offset - T
+        if B + shift_y > height - 15:
+            shift_y = max(0, height - B - 15)
+        if shift_y != 0:
+            for t in placed:
+                if t.get("x", 0) > -1000:
+                    t["y"] += shift_y
 
     # Paste each tile's illustration (PNGs already have alpha transparency)
     for t in placed:
@@ -475,28 +500,57 @@ _FONT_CACHE: dict = {}
 def _load_font(style: str, size: int) -> ImageFont:
     """Load a serif font with the given style (Bold, Italic, ''), caching.
 
-    Tries DejaVu Serif (Linux) then Georgia (macOS), falls back to default.
+    Tries Georgia (macOS) then Liberation Serif (Docker/Linux), then
+    DejaVu Serif (fallback). Liberation Serif is metrically compatible with Georgia.
     """
     key = (style, size)
     cached = _FONT_CACHE.get(key)
     if cached:
         return cached
 
-    suffix = f"-{style}" if style else ""
-    families = [
-        ("DejaVuSerif", f"/usr/share/fonts/truetype/dejavu/DejaVuSerif{suffix}.ttf"),
-        ("Georgia", f"/System/Library/Fonts/Georgia {style}.ttf" if style else "/System/Library/Fonts/Georgia.ttf"),
-    ]
+    font_candidates = []
+
+    # Georgia (macOS Supplemental, modern macOS paths)
+    if style == "BoldItalic":
+        font_candidates.append(
+            ("Georgia", "/System/Library/Fonts/Supplemental/Georgia Bold Italic.ttf")
+        )
+    elif style:
+        font_candidates.append(
+            ("Georgia", f"/System/Library/Fonts/Supplemental/Georgia {style}.ttf")
+        )
+    else:
+        font_candidates.append(
+            ("Georgia", "/System/Library/Fonts/Supplemental/Georgia.ttf")
+        )
+
+    # Liberation Serif (Docker/Linux — metrically equivalent to Georgia)
+    lib_suffix = f"-{style}" if style else ""
+    font_candidates.append(
+        ("Liberation Serif", f"/usr/share/fonts/truetype/liberation2/LiberationSerif{lib_suffix}.ttf")
+    )
+    font_candidates.append(
+        ("Liberation Serif", f"/usr/share/fonts/truetype/liberation/LiberationSerif{lib_suffix}.ttf")
+    )
+
+    # DejaVu Serif (fallback)
+    dv_suffix = f"-{style}" if style else ""
+    font_candidates.append(
+        ("DejaVu Serif", f"/usr/share/fonts/truetype/dejavu/DejaVuSerif{dv_suffix}.ttf")
+    )
+
     font = None
-    for name, path in families:
+    for name, path in font_candidates:
         try:
             font = ImageFont.truetype(path, size)
+            log.debug("Loaded font: %s from %s", name, path)
             break
         except (OSError, IOError):
             continue
 
     if font is None:
         font = ImageFont.load_default()
+        log.warning("No serif font found, using default bitmap font")
 
     _FONT_CACHE[key] = font
     return font
@@ -518,11 +572,10 @@ def _draw_title(draw, title: str, width: int):
 
     Font sizes are width-relative, matching CSS clamp() expressions.
     """
-    # Width-relative sizes matching CSS:
-    #   heading: clamp(24px, 3.2vw, 40px)
-    #   site:    clamp(13px, 1.4vw, 18px)
-    heading_size = min(max(24, int(round(width * 0.032))), 40)
-    site_size = min(max(13, int(round(width * 0.014))), 18)
+    # Width-relative sizes — ~50% larger than before, matching the desired
+    # visual proportion relative to the collage area.
+    heading_size = min(max(24, int(round(width * 0.040))), 72)
+    site_size = min(max(14, int(round(width * 0.022))), 28)
 
     heading_font = _load_font("Bold", heading_size)
     site_font = _load_font("Italic", site_size)
@@ -575,7 +628,7 @@ def _img_to_bytes(img) -> bytes:
     return buf.getvalue()
 
 
-def compute_etag(species: list[dict], hours: int, img_version: str = "r11") -> str:
+def compute_etag(species: list[dict], hours: int, img_version: str = "r12") -> str:
     """Compute a content-hash ETag from species data + params.
 
     Matches: sorted species (sci + n + last_seen) + hours + img_version
