@@ -405,10 +405,13 @@ def render_collage(
     # --- Compute tile sizes ---
     tiles = _compute_tile_sizes(species, width, height, dims, masks_data)
     if not tiles:
-        # Empty collage: return blank image with header
+        # Empty collage: return blank image with centred title
         img = Image.new("RGB", (width, height), (255, 255, 255))
         draw = ImageDraw.Draw(img)
-        _draw_title(draw, title, width)
+        if title:
+            layout = _title_layout(title, width)
+            top_offset = max(0, (height - layout["total_h"]) / 2)
+            _draw_title(draw, title, width, y_offset=int(round(top_offset)))
         buf = _img_to_bytes(img)
         return buf
 
@@ -424,15 +427,10 @@ def render_collage(
     img = Image.new("RGB", (width, height), (255, 255, 255))
     draw = ImageDraw.Draw(img)
 
-    title_height = 0
-    if title:
-        title_height = _draw_title(draw, title, width)
+    if title and placed:
+        layout = _title_layout(title, width)
 
-    # Vertically centre the title + collage block, with a gap matching the
-    # internal font gap between site name and heading.
-    if title_height > 0 and placed:
-        heading_size = min(max(24, int(round(width * 0.040))), 72)
-        font_gap = max(4, int(round(heading_size * 0.25)))
+        # Collage bounding box
         T = float("inf")
         B = float("-inf")
         for t in placed:
@@ -442,15 +440,28 @@ def render_collage(
                 T = t["y"]
             if t["y"] + t["fullH"] > B:
                 B = t["y"] + t["fullH"]
-        total_h = title_height + font_gap + (B - T)
-        top_offset = (height - total_h) / 2
-        shift_y = top_offset - T
+        ch = B - T
+
+        # Vertically centre the title + gap + collage block
+        block_h = layout["total_h"] + layout["gap"] + ch
+        top_offset = max(0, (height - block_h) / 2)
+
+        # Draw title at the centred position
+        _draw_title(draw, title, width, y_offset=int(round(top_offset)))
+
+        # Shift collage down so its top sits just below the title + gap
+        desired_top = int(round(top_offset + layout["total_h"] + layout["gap"]))
+        shift_y = desired_top - T
         if B + shift_y > height - 15:
             shift_y = max(0, height - B - 15)
         if shift_y != 0:
             for t in placed:
                 if t.get("x", 0) > -1000:
                     t["y"] += shift_y
+
+    elif title:
+        # No tiles: just draw the title at the top
+        _draw_title(draw, title, width)
 
     # Paste each tile's illustration (PNGs already have alpha transparency)
     for t in placed:
@@ -556,24 +567,13 @@ def _load_font(style: str, size: int) -> ImageFont:
     return font
 
 
-def _draw_text_spaced(draw, xy, text, font, fill, letter_spacing):
-    """Draw text with per-character letter-spacing (px)."""
-    x, y = xy
-    for ch in text:
-        bbox = draw.textbbox((0, 0), ch, font=font)
-        cw = bbox[2] - bbox[0]
-        draw.text((x - bbox[0], y), ch, fill=fill, font=font)
-        x += cw + letter_spacing
+def _title_layout(title: str, width: int) -> dict:
+    """Compute title layout metrics without drawing.
 
-
-def _draw_title(draw, title: str, width: int):
-    """Draw two-line header: site name (small, italic, serif) above
-    'HEARD RECENTLY' (large, bold, serif, uppercase, letter-spaced).
-
-    Font sizes are width-relative, matching CSS clamp() expressions.
+    Returns a dict with all measurements needed for positioning and drawing:
+    total_h, pad_top, site_h, site_x, gap, heading_h, heading_x, pad_bot,
+    site_font, heading_font, ls, heading_text, heading_color, site_color.
     """
-    # Width-relative sizes — ~50% larger than before, matching the desired
-    # visual proportion relative to the collage area.
     heading_size = min(max(24, int(round(width * 0.040))), 72)
     site_size = min(max(14, int(round(width * 0.022))), 28)
 
@@ -584,41 +584,82 @@ def _draw_title(draw, title: str, width: int):
     heading_color = (30, 30, 30)
     site_color = (100, 100, 100)
 
-    # Site name (no letter spacing)
-    site_bbox = draw.textbbox((0, 0), title, font=site_font)
+    _temp = Image.new("RGB", (1, 1))
+    _td = ImageDraw.Draw(_temp)
+
+    site_bbox = _td.textbbox((0, 0), title, font=site_font)
     site_w = site_bbox[2] - site_bbox[0]
     site_h = site_bbox[3] - site_bbox[1]
     site_x = (width - site_w) / 2
 
-    # Heading with letter-spacing (~0.06em)
     ls = max(1, int(round(heading_size * 0.06)))
     total_w = 0
     char_data = []
     for ch in heading_text:
-        b = draw.textbbox((0, 0), ch, font=heading_font)
+        b = _td.textbbox((0, 0), ch, font=heading_font)
         cw = b[2] - b[0]
         char_data.append((ch, b, cw))
         total_w += cw + ls
     total_w -= ls
-
     heading_x = (width - total_w) / 2
     heading_h = char_data[0][1][3] - char_data[0][1][1] if char_data else 0
 
-    # Vertical layout with padding
     gap = max(4, int(round(heading_size * 0.25)))
     pad_top = max(8, int(round(site_size * 0.8)))
     pad_bot = pad_top
+    total_h = pad_top + site_h + gap + heading_h + pad_bot
 
-    site_y = pad_top
-    heading_y = pad_top + site_h + gap
+    return {
+        "pad_top": pad_top,
+        "site_h": site_h,
+        "site_x": site_x,
+        "gap": gap,
+        "heading_h": heading_h,
+        "heading_x": heading_x,
+        "pad_bot": pad_bot,
+        "total_h": total_h,
+        "site_font": site_font,
+        "heading_font": heading_font,
+        "ls": ls,
+        "heading_text": heading_text,
+        "heading_color": heading_color,
+        "site_color": site_color,
+        "title": title,
+    }
 
-    draw.text((site_x, site_y), title, fill=site_color, font=site_font)
+
+def _draw_text_spaced(draw, xy, text, font, fill, letter_spacing):
+    """Draw text with per-character letter-spacing (px)."""
+    x, y = xy
+    for ch in text:
+        bbox = draw.textbbox((0, 0), ch, font=font)
+        cw = bbox[2] - bbox[0]
+        draw.text((x - bbox[0], y), ch, fill=fill, font=font)
+        x += cw + letter_spacing
+
+
+def _draw_title(draw, title: str, width: int, y_offset: int = 0) -> int:
+    """Draw two-line header: site name (small, italic, serif) above
+    'HEARD RECENTLY' (large, bold, serif, uppercase, letter-spaced).
+
+    Font sizes are width-relative, matching CSS clamp() expressions.
+    y_offset shifts the entire title block down from the top of the canvas.
+    Returns the Y coordinate of the bottom of the title block.
+    """
+    layout = _title_layout(title, width)
+    site_y = y_offset + layout["pad_top"]
+    heading_y = y_offset + layout["pad_top"] + layout["site_h"] + layout["gap"]
+
+    draw.text(
+        (layout["site_x"], site_y), layout["title"],
+        fill=layout["site_color"], font=layout["site_font"],
+    )
     _draw_text_spaced(
-        draw, (heading_x, heading_y), heading_text, heading_font,
-        heading_color, ls,
+        draw, (layout["heading_x"], heading_y), layout["heading_text"],
+        layout["heading_font"], layout["heading_color"], layout["ls"],
     )
 
-    return pad_top + site_h + gap + heading_h + pad_bot
+    return y_offset + layout["total_h"]
 
 
 def _img_to_bytes(img) -> bytes:
@@ -628,7 +669,7 @@ def _img_to_bytes(img) -> bytes:
     return buf.getvalue()
 
 
-def compute_etag(species: list[dict], hours: int, img_version: str = "r12") -> str:
+def compute_etag(species: list[dict], hours: int, img_version: str = "r13") -> str:
     """Compute a content-hash ETag from species data + params.
 
     Matches: sorted species (sci + n + last_seen) + hours + img_version
