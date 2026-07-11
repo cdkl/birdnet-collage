@@ -296,7 +296,8 @@ def create_app(config=None):
         # Render new collage
         t0 = time.monotonic()
         try:
-            png = render_collage(species, w, h, config.SITE_TITLE)
+            png = render_collage(species, w, h, config.SITE_TITLE,
+                                  flight_prob=config.FLIGHT_POSE_PROB)
         except Exception as e:
             log.exception("Failed to render eink collage")
             _record_error("eink_render", f"{w}x{h} {hours}h {len(species)}spp", str(e))
@@ -378,7 +379,8 @@ def create_app(config=None):
 
     @app.route("/")
     def index():
-        return render_template("index.html", site_title=config.SITE_TITLE)
+        return render_template("index.html", site_title=config.SITE_TITLE,
+                               flight_pose_prob=config.FLIGHT_POSE_PROB)
 
     @app.route("/<path:path>")
     def static_files(path):

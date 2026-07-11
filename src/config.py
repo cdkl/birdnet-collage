@@ -12,3 +12,4 @@ class Config:
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = int(os.getenv("PORT", "8081"))
     DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+    FLIGHT_POSE_PROB = float(os.getenv("FLIGHT_POSE_PROB", "0.15"))

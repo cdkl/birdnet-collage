@@ -113,6 +113,7 @@ Backend API responses must match what `apt.js` expects:
 | `BIRDNET_GO_TOKEN` | (none) | Bearer token if GO auth enabled |
 | `PORT` | 8081 | Host port for docker-compose mapping |
 | `SITE_TITLE` | `birdnet collage` | Title shown in browser tab, header, about modal |
+| `FLIGHT_POSE_PROB` | `0.15` | Probability a bird appears in flight pose (0.0=all perched, 1.0=all flight). Used by both JS (web) and Python (e-ink) renderers. |
 
 **Constraint**: Every env var consumed by the application must appear in:
 1. `src/config.py` — Python-side default and `os.getenv()` call.

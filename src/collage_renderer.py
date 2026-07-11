@@ -130,7 +130,8 @@ def _tuning(n: int) -> dict[str, float]:
 
 
 def _compute_tile_sizes(
-    species: list[dict], w: int, h: int, dims: dict, masks_data: dict
+    species: list[dict], w: int, h: int, dims: dict, masks_data: dict,
+    flight_prob: float = 0.15, prng: Optional["_ParkMillerPRNG"] = None,
 ) -> list:  # list of dict or None values
     """Build tiles with scores and dimensions — matches apt.js renderCollage sizing."""
     T = _tuning(len(species))
@@ -141,10 +142,17 @@ def _compute_tile_sizes(
     tiles = []
     for s in species:
         base = slugify(s["sci"])
-        mask = _load_mask(base, masks_data)
+        # Pose selection: flight with probability flight_prob, else perched
+        slug = base
+        if flight_prob > 0 and prng and prng.random() < flight_prob:
+            flight_slug = base + "-2"
+            if _load_mask(flight_slug, masks_data):
+                slug = flight_slug
+
+        mask = _load_mask(slug, masks_data)
         if not mask:
             continue
-        d = dims.get(base, [1.4, 1.0])
+        d = dims.get(slug, [1.4, 1.0])
         ar = d[0] / d[1] if d[1] else 1.4
         n_raw = s.get("n", 1)
         if not n_raw or n_raw == 0:
@@ -153,7 +161,7 @@ def _compute_tile_sizes(
         tiles.append({
             "mask": mask,
             "data": s,
-            "slug": base,
+            "slug": slug,
             "ar": ar,
             "score": score,
         })
@@ -374,6 +382,7 @@ def render_collage(
     dims: Optional[dict] = None,
     masks_data: Optional[dict] = None,
     prng: Optional[_ParkMillerPRNG] = None,
+    flight_prob: float = 0.15,
 ) -> bytes:
     """Render a bird collage as PNG bytes.
 
@@ -403,7 +412,8 @@ def render_collage(
     _mask_cache.clear()
 
     # --- Compute tile sizes ---
-    tiles = _compute_tile_sizes(species, width, height, dims, masks_data)
+    tiles = _compute_tile_sizes(species, width, height, dims, masks_data,
+                                 flight_prob=flight_prob, prng=prng)
     if not tiles:
         # Empty collage: return blank image with centred title
         img = Image.new("RGB", (width, height), (255, 255, 255))
@@ -471,14 +481,14 @@ def render_collage(
         ty = t.get("y", 0)
         slug = t["slug"]
 
-        # Load illustration
+        # Load illustration: try exact slug first, then fall back to the other pose
         ill_path = os.path.join(ILLUSTRATIONS_DIR, f"{slug}.png")
         if not os.path.isfile(ill_path):
-            # Try flight variant, then skip
-            ill_path2 = os.path.join(ILLUSTRATIONS_DIR, f"{slug}-2.png")
-            if os.path.isfile(ill_path2):
-                ill_path = ill_path2
+            if slug.endswith("-2"):
+                ill_path = os.path.join(ILLUSTRATIONS_DIR, f"{slug[:-3]}.png")
             else:
+                ill_path = os.path.join(ILLUSTRATIONS_DIR, f"{slug}-2.png")
+            if not os.path.isfile(ill_path):
                 log.debug("Missing illustration: %s", slug)
                 continue
 

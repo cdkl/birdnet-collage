@@ -252,7 +252,7 @@
   var GRID_STRIDE = 4; // viewport px per occupancy cell; smaller = slower
   var COLLAGE_PAD = 3; // breathing room (grid cells) around each bird;
                        // eased on narrow screens where birds are smaller.
-  var FLY_PROB = 0.15; // chance a bird shows in its flight pose (rare); perched
+  var FLY_PROB = window.__FLIGHT_POSE_PROB != null ? +window.__FLIGHT_POSE_PROB : 0.15; // chance a bird shows in its flight pose (rare); perched
                        // otherwise. Rolled once per window appearance.
   var collagePose = {}; // sci -> 1 perched | 2 flight, persisted across polls;
                         // cleared when a bird leaves the window so it rerolls.

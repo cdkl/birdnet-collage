@@ -7,4 +7,5 @@ services:
     environment:
       - BIRDNET_GO_URL=${BIRDNET_GO_URL}
       - SITE_TITLE=${SITE_TITLE:-birdnet collage}
+      - FLIGHT_POSE_PROB=${FLIGHT_POSE_PROB:-0.15}
     restart: unless-stopped
